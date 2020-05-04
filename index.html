@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Requirements for Media Production</title>
+    <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" async></script>
+    <script class="remove">
+      var respecConfig = {
+        specStatus: "ED",
+        editors: [{
+          name: "Garrett Singer",
+          company: "Brightcove",
+          companyURL: "https://www.brightcove.com/",
+          w3cid: 117292
+        }],
+        github: "https://github.com/w3c/me-media-production/",
+        shortName: "media-production",
+        wg: "Media & Entertainment Interest Group",
+        wgURI: "https://www.w3.org/2011/webtv/",
+        wgPatentURI: "https://www.w3.org/2004/01/pp-impl/46300/status",
+        charterDisclosureURI: "https://www.w3.org/2019/06/me-ig-charter.html#patentpolicy",
+        xref: {
+          profile: "web-platform"
+        },
+        localBiblio: {
+          "SMPTE12-1": {
+            title: "SMPTE ST 12-1:2014 \"SMPTE Standard - Time and Control Code\"",
+            href: "https://ieeexplore.ieee.org/document/7291029",
+            publisher: "SMPTE",
+            date: "20 February 2014",
+            status: "Standard"
+          }
+        }
+      };
+    </script>
+  </head>
+  <body class="informative">
+    <section id="abstract">
+      <p>
+        This document collects use cases and requirements for improved support
+        for building web applications that allow end-users to manipulate
+        professional media assets, including audio-visual masters for television
+        and motion pictures, and perform media production steps such as quality
+        checking, versioning, or timed text authoring.
+      </p>
+    </section>
+
+    <section id="sotd">
+      <p>
+      </p>
+    </section>
+
+    <section>
+      <h2>Introduction</h2>
+      <p>
+        Professional media assets, including audio-visual masters for television
+        and motion pictures, are increasingly being stored in the cloud.
+      </p>
+      <p>
+        There is a corresponding growing interest in building web applications
+        that allow end-users to manipulate these assets, e.g., quality checking,
+        versioning, timed text authoring, etc. While the web platform has
+        evolved to support consumer media applications, professional
+        applications require additional capabilities, including precise timing,
+        wider color gamut and high-dynamic range, high-fidelity timed text, etc.
+      </p>
+      <p>
+        This document analyses gaps in web platform technologies for media
+        production through use cases and requirements.
+      </p>
+    </section>
+
+    <section>
+      <h2>Use cases</h2>
+      <p class="ednote" title="To be completed">
+        Concrete use cases welcome through
+        <a href="https://github.com/w3c/me-media-production/issues/">GitHub
+        issues</a> or pull requests.
+      </p>
+    </section>
+
+    <section>
+      <h2>Functional gaps</h2>
+      <p class="ednote" title="Pending use cases">
+        This list of gaps is to be driven by use cases and will be re-evaluated
+        as the list of use cases in <a href="#use-cases"></a> is completed.
+      </p>
+      <section>
+        <h3>Frame identification</h3>
+        <p>
+          Web applications measure time values with respect to a
+          <a>monotonic clock</a> [[HR-TIME]]. The [[[HTML]]] [[HTML]] does not
+          expose any precise mechanism to assess the time value, with respect to
+          that clock, at which a particular media frame is going to be rendered.
+          A web application may only infer this information by looking at the
+          <a data-cite="HTML#media-element">media element</a>'s
+          {{HTMLMediaElement/currentTime}} property to infer the frame being
+          rendered and the time at which the user will see the next frame.
+          This has several limitations:
+        </p>
+
+        <ul>
+          <li>
+            {{HTMLMediaElement/currentTime}} is represented as a double value,
+            which does not allow it to identify individual frames due to
+            rounding errors. This is a
+            <a href="https://github.com/whatwg/html/issues/609">known issue</a>.
+          </li>
+          <li>
+            {{HTMLMediaElement/currentTime}} is updated at a user-agent defined
+            rate (typically the rate at which the
+            <a data-cite="HTML#time-marches-on">time marches on</a> algorithm
+            runs), and is kept stable while scripts are running. When a web
+            application reads {{HTMLMediaElement/currentTime}}, it cannot tell
+            when this property was last updated, and thus cannot reliably assess
+            whether this property still represents the frame currently being
+            rendered.
+          </li>
+        </ul>
+
+        <p>
+          In addition, {{HTMLMediaElement/currentTime}} only accepts a time
+          value, and neither has the ability, nor is there an alternative API,
+          to set its value to a frame number or SMPTE time code [[SMPTE12-1]].
+        </p>
+      </section>
+
+      <section>
+        <h3>Seeking to next/previous frame</h3>
+        <p>
+          The <a data-cite="HTML#media-element">media element</a> does not
+          provide a mechanism to seek by individual frames. This can be worked
+          around by using the media's frame rate and the
+          <a data-cite="HTML#media-element">media element</a>'s
+          {{HTMLMediaElement/currentTime}} property to seek by a frame duration
+          from the reported {{HTMLMediaElement/currentTime}} value, but the
+          {{HTMLMediaElement/currentTime}} property does not guarantee frame
+          level precision. In addition, the frame rate of the media may vary
+          over time, may be rounded internally by the browser, and is not
+          exposed.
+        </p>
+      </section>
+
+      <section>
+        <h3>
+          Indeterminate frame boundaries for segments in Media Source Extensions
+        </h3>
+        <p>
+          When appending segments using [[[MSE]]] [[MSE]], the
+          <a data-cite="MSE#dom-sourcebuffer-timestampoffset"><code>
+          timestampOffset</code></a> property does not provide enough precision
+          to identify frame boundaries. This suffers the same limitation as
+          {{HTMLMediaElement/currentTime}}, where the value is represented as a
+          double, which does not allow it to identify individual frames due to
+          rounding errors.
+        </p>
+      </section>
+
+      <section>
+        <h3>Synchronization with remote playback</h3>
+        <p>
+          For playback of remote content (e.g., via the [[[REMOTE-PLAYBACK]]]
+          [[REMOTE-PLAYBACK]] or [[[PICTURE-IN-PICTURE]]]
+          [[PICTURE-IN-PICTURE]]), whether the content will be able to be
+          synchronized remains an open question. This
+          <a href="https://github.com/w3c/media-and-entertainment/issues/21">has
+          been reported</a> by the
+          <a href="https://www.w3.org/community/webscreens/">Second Screen
+          Community Group</a>.
+        </p>
+      </section>
+    </section>
+
+    <section id="index" class="appendix"></section>
+  </body>
+</html>
